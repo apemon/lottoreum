@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Lotto Test</title>
+    </head>
+    <body>
+
+    </body>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script src="lotto.js"></script>
+    <script>
+    // Initializing
+    if (typeof web3 !== 'undefined') {
+      web3 = new Web3(web3.currentProvider);
+    }
+    // Get default address
+    web3.eth.defaultAccount;
+    // contract
+    var abi = lotto.abi;
+    var contractAddress = lotto.networks[5777].address;
+    var lottoContractContract = web3.eth.contract(abi);
+    var lottoContract = lottoContractContract.at(contractAddress);
+    // function
+    function BuyLotto(number) {
+        lottoContract.createLotto(number, 
+        {
+            from: web3.eth.defaultAccount,
+            value: web3.toWei(0.01, 'ether')
+        },function(err,res){
+            console.log(res);
+        });
+    }
+    function CheckOwner(number) {
+        lottoContract.ownerOf(number, function(err,res){
+            console.log(res);
+        });
+    }
+    function LuckyDraw(number) {
+        lottoContract.setLuckyNumber(number, function(err, res){
+            console.log(res);
+        });
+    }
+    function ViewLuckyDrawEvent() {
+        var handleLuckyDrawEventCallback = function(err,res) {
+            for(var index = 0;index<res.length;index++){
+                var tx = res[index];
+                console.log('winner:' + tx.args._winner);
+                console.log('number:' + tx.args._number);
+                console.log('prize:' + web3.fromWei(tx.args.price));
+            }
+        }
+        var events = lottoContract.LuckyDraw({
+
+        }, {
+            fromBlock: '3',
+            toBlock: 'latest'
+        });
+        events.get(handleLuckyDrawEventCallback);
+    }
+    </script>
+</html>

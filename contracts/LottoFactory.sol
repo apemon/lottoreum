@@ -10,7 +10,8 @@ contract LottoFactory is Ownable {
     mapping (string => address) lottoToOwner;
     mapping (address => uint) ownerLottoCount;
 
-    event LottoPurchase(address _owner, string _number);
+    event LottoPurchase(address owner, string number);
+    event LuckyDraw(string number, address winner, uint prize);
 
     function balanceOf(address _owner) public view returns (uint) {
         return ownerLottoCount[_owner];
@@ -37,9 +38,12 @@ contract LottoFactory is Ownable {
         luckyNumber = _number;
         // transfer money to winner
         address _winner = lottoToOwner[luckyNumber];
+        uint prize = 0;
         if(_winner != address(0)) {
-            _winner.transfer(this.balance);
+            prize = this.balance;
+            _winner.transfer(prize);
         }
+        emit LuckyDraw(_number, _winner, prize);
     }
 
     function setLottoPrice(uint _price) public onlyOwner {
