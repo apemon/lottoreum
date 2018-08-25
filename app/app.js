@@ -3,7 +3,7 @@ var bodyParser = require('body-parser');
 var moment = require('moment');
 var Web3 = require('web3');
 var contract = require('truffle-contract');
-var lottoContract = require('./../build/contracts/LottoFactory.json');
+var lottoContract = require('./../build/contracts/LottoPool.json');
 
 var port = process.env.PORT || 4000;
 var app = express();
@@ -27,10 +27,11 @@ Lotto.deployed().then(function (instance) {
     console.log(err);
 });
 
-app.get('/create/:address/:number', function (req, res) {
-    lotto.createLotto(req.params.number, {
+app.get('/pool/create/:address/:value', function (req, res) {
+    lotto.createPool("hello", {
         from: req.params.address,
-        value: web3.toWei(0.01 , 'ether')
+        value: web3.toWei(req.params.value , 'ether'),
+        gas: 100000000
     }).then(function(result){
         console.log(result);
         res.send(result);
@@ -40,37 +41,15 @@ app.get('/create/:address/:number', function (req, res) {
     });
 });
 
-// app.get("/account/:address",function(req,res){
-//     lotto.balanceOf(req.params.address)
-//     .then(function(result){
-//         console.log(result);
-//         res.send(result);
-//     }, function(err){
-//         console.log(err);
-//         res.send(err);
-//     })
-// });
-
-app.get("/lotto/:number",function(req,res){
-    lotto.ownerOf(req.params.number)
-    .then(function(result){
+app.get('/lotto/create/:address/:poolId/:number', function (req, res) {
+    lotto.createLotto(req.params.poolId, req.params.number, {
+        from: req.params.address,
+        gas: 100000000000000
+    }).then(function(result){
         console.log(result);
         res.send(result);
     }, function(err){
         console.log(err);
         res.send(err);
-    })
-});
-
-app.get("/lucky/:number",function(req,res){
-    lotto.setLuckyNumber(req.params.number, {
-        from: web3.eth.accounts[0]
-    })
-    .then(function(result){
-        console.log(result);
-        res.send(result);
-    }, function(err){
-        console.log(err);
-        res.send(err);
-    })
+    });
 });
