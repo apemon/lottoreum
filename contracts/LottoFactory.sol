@@ -16,6 +16,10 @@ contract LottoFactory is Ownable {
     function balanceOf(address _owner) public view returns (uint) {
         return ownerLottoCount[_owner];
     }
+    modifier LottoSanityCheck (string _number){
+        require(bytes(_number).length==6);
+        _;
+    }
 
     function ownerOf(string number) public view returns (address) {
         return lottoToOwner[number];
@@ -27,14 +31,14 @@ contract LottoFactory is Ownable {
         emit LottoPurchase(msg.sender, _number);
     }
 
-    function createLotto(string _number) public payable {
+    function createLotto(string _number) public payable LottoSanityCheck {
         // need to check that no one has purchase this lotto
         require(lottoToOwner[_number] == address(0));
         require(msg.value == price);
         _createLotto(_number);
     }
 
-    function setLuckyNumber(string _number) public onlyOwner {
+    function setLuckyNumber(string _number) public onlyOwner LottoSanityCheck {
         luckyNumber = _number;
         // transfer money to winner
         address _winner = lottoToOwner[luckyNumber];
