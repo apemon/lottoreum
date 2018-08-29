@@ -37,4 +37,16 @@ contract LottoToken is Ownable, ERC721BasicToken {
             i = i.add(1);
         }
     }
+
+    function getLottoInfo(uint _lottoId) public view returns (
+        uint, string, uint, address
+    ) {
+        Lotto memory lotto = lottos[_lottoId];
+        return (
+            lotto.poolId,
+            lotto.number,
+            lotto.price,
+            ownerOf(_lottoId)
+        );
+    }
 }

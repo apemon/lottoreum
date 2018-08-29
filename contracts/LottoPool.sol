@@ -28,6 +28,11 @@ contract LottoPool is LottoToken {
     mapping (address => uint) ownerPoolCount;
 
     event PoolCreated(uint id, string name, uint balance);
+
+    modifier onlyPoolOwner(uint _poolId) {
+        require(poolToOwner[_poolId] == msg.sender, "must on the owner of the pool");
+        _;
+    }
     
     function totalPoolOwn(address _owner) public view returns (uint) {
         return ownerPoolCount[_owner];
@@ -35,6 +40,27 @@ contract LottoPool is LottoToken {
 
     function ownerOfPool(uint _id) public view returns (address) {
         return poolToOwner[_id];
+    }
+
+    function getPoolInfo(uint _poolId) public view returns (
+        string, string, uint, uint
+        ) {
+        Pool memory pool = pools[_poolId];
+        string memory state;
+        if(State.Initial == pool.state)
+            state = "Initial";
+        else if(State.Open == pool.state)
+            state = "Open";
+        else if(State.Claim == pool.state)
+            state = "Claim";
+        else if(State.Close == pool.state)
+            state = "Close";
+        else state = "Unknown";
+        return (
+            pool.name,
+            state,
+            pool.prize,
+            pool.balance);
     }
 
     function createPool(string _name) public payable {
@@ -46,7 +72,7 @@ contract LottoPool is LottoToken {
         emit PoolCreated(id, _name, msg.value);
     }
 
-    function createLotto(uint _poolId, string _numberString, uint price) public {
+    function createLotto(uint _poolId, string _numberString, uint price) public onlyPoolOwner(_poolId) {
         require(poolToOwner[_poolId] == msg.sender, "must on the owner of the pool");
         Pool storage pool = pools[_poolId];
         if(pool.state != State.Initial)
@@ -54,7 +80,7 @@ contract LottoPool is LottoToken {
         _createLotto(_poolId, _numberString, price);
     }
 
-    function openPool(uint _poolId) public {
+    function openPool(uint _poolId) public onlyPoolOwner(_poolId) {
         require(poolToOwner[_poolId] == msg.sender, "must on the owner of the pool");
         Pool storage pool = pools[_poolId];
         if(pool.state != State.Initial)
@@ -64,17 +90,18 @@ contract LottoPool is LottoToken {
 
     function buyLotto(uint _lottoId) public payable {
         require(msg.value == lottos[_lottoId].price, "must buy at lotto price");
+        Lotto memory lotto = lottos[_lottoId];
+        uint _poolId = lotto.poolId;
         Pool storage pool = pools[_poolId];
         if(pool.state != State.Open)
             revert("invalid state");
-        Lotto memory lotto = lottos[_lottoId];
-        uint _poolId = lotto.poolId;
         if(ownerOf(_lottoId) != poolToOwner[_poolId])
             revert("lotto must from the dealer");
         // transfer
         address poolOwner = poolToOwner[_poolId];
         safeTransferFrom(poolOwner, msg.sender, _lottoId);
         string memory number = lotto.number;
+        pool.balance.add(msg.value);
         pool.numberCount[number].add(1);
     }
 }

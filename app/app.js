@@ -46,7 +46,7 @@ app.get('/pool/create/:address/:value', function (req, res) {
 });
 
 app.get('/lotto/create/:address/:poolId/:number/:price', function (req, res) {
-    lotto.createLotto(req.params.poolId, req.params.number, req.params.price, {
+    lotto.createLotto(req.params.poolId, req.params.number, web3.toWei(req.params.price, 'ether'), {
         from: req.params.address,
         gas: 2000000
     }).then(function(result){
@@ -86,8 +86,44 @@ app.get('/pool/open/:address/:id', function (req, res) {
 app.get('/lotto/buy/:address/:id', function (req, res) {
     lotto.buyLotto(req.params.id, {
         from: req.params.address,
-        value: web3.toWei(0.1 , 'ether'),
+        value: web3.toWei(5 , 'ether'),
         gas: 2000000
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
+
+app.get('/pool/info/:id', function (req, res) {
+    lotto.getPoolInfo(req.params.id, {
+        
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
+
+app.get('/lotto/info/:id', function (req, res) {
+    lotto.getLottoInfo(req.params.id, {
+        
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
+
+app.get('/lotto/approve/:from/:to/:id', function (req, res) {
+    lotto.approve(req.params.to, req.params.id, {
+        from: req.params.from
     }).then(function(result){
         console.log(result);
         res.send(result);
