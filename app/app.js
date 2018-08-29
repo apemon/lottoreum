@@ -86,7 +86,7 @@ app.get('/pool/open/:address/:id', function (req, res) {
 app.get('/lotto/buy/:address/:id', function (req, res) {
     lotto.buyLotto(req.params.id, {
         from: req.params.address,
-        value: web3.toWei(5 , 'ether'),
+        value: web3.toWei(2 , 'ether'),
         gas: 2000000
     }).then(function(result){
         console.log(result);

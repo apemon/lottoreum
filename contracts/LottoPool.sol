@@ -95,11 +95,8 @@ contract LottoPool is LottoToken {
         Pool storage pool = pools[_poolId];
         if(pool.state != State.Open)
             revert("invalid state");
-        if(ownerOf(_lottoId) != poolToOwner[_poolId])
-            revert("lotto must from the dealer");
         // transfer
-        address poolOwner = poolToOwner[_poolId];
-        safeTransferFrom(poolOwner, msg.sender, _lottoId);
+        _transferLotto(msg.sender, _lottoId);
         string memory number = lotto.number;
         pool.balance.add(msg.value);
         pool.numberCount[number].add(1);
