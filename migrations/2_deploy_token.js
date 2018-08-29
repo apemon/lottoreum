@@ -1,8 +1,8 @@
 //var SafeMath = artifacts.require("./SafeMath.sol")
-var Lotto = artifacts.require("./LottoPool.sol");
+var LottoToken = artifacts.require("./LottoToken.sol");
 
 module.exports = function(deployer) {
   //deployer.deploy(SafeMath);
   //deployer.link(SafeMath, Token);
-  deployer.deploy(Lotto);
+  deployer.deploy(LottoToken, "Lottoreum", "LOL", 0);
 };
