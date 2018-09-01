@@ -3,6 +3,7 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC721/ERC721BasicToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Strings.sol";
 
 contract LottoAsset is Ownable, ERC721BasicToken {
 

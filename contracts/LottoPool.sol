@@ -12,6 +12,8 @@ contract LottoPool is Ownable, LottoAsset {
     using SafeMath for uint;
     using strings for *;
 
+    ERC20 tokenContract;
+
     struct Pool {
         string name;
         bool isActive;
@@ -24,8 +26,8 @@ contract LottoPool is Ownable, LottoAsset {
     Pool[] public pools;
     
     uint[] activePool;
-    uint public minPrize;
-    string private _tokenAddress;
+    uint public minPrize = 1000;
+    uint public feeBalance;
 
     mapping (uint => address) poolToOwner;
     mapping (address => uint) ownerPoolCount;
@@ -34,7 +36,7 @@ contract LottoPool is Ownable, LottoAsset {
     event PoolActive(uint poolId, uint totalLotto, uint prize);
 
     modifier onlyPoolOwner(uint _poolId) {
-        require(poolToOwner[_poolId] == msg.sender, "must on the owner of the pool");
+        require(poolToOwner[_poolId] == msg.sender, "must be the owner of the pool");
         _;
     }
     
@@ -42,8 +44,8 @@ contract LottoPool is Ownable, LottoAsset {
         revert("we don't accept ETH");
     }
 
-    function setTokenAddress(address _address) public onlyOwner {
-        _tokenAddress = _address;
+    function setTokenAddress(address _address) external onlyOwner {
+        tokenContract = ERC20(_address);
     }
 
     function setMinPrize(uint _prize) public onlyOwner {
@@ -59,13 +61,13 @@ contract LottoPool is Ownable, LottoAsset {
     }
 
     function createPool(string _name, uint _initialBalance) public {
-        require(minPrize <= _initialBalance, "too low prize");
-        ERC20 token = ERC20(_tokenAddress);
-        require(token.balanceOf(msg.sender) >= _initialBalance, "not enough token");
-        Pool memory pool = Pool(_name, false, _initialBalance, _initalBalance, 0);
+        require(_initialBalance >= minPrize, "too low prize");
+        require(tokenContract.balanceOf(msg.sender) >= _initialBalance, "not enough token");
+        Pool memory pool = Pool(_name, false, _initialBalance, _initialBalance, 0);
         uint id = pools.push(pool).sub(1);
         poolToOwner[id] = msg.sender;
         ownerPoolCount[msg.sender].add(1);
+        tokenContract.transferFrom(msg.sender, address(this), _initialBalance);
         emit PoolCreated(id, _name, _initialBalance);
     }
 
@@ -79,8 +81,7 @@ contract LottoPool is Ownable, LottoAsset {
         uint length = temp.count(delimiter).add(1);
         while (i < length) {
             string memory _number = temp.split(delimiter).toString();
-            uint _lottoId = _createLotto(_poolId, _number, _price);
-            pool.numberToLottos[_number].push(_lottoId);
+            _createLotto(_poolId, _number, _price);
             pool.totalLotto = pool.totalLotto.add(1);
             i = i.add(1);
         }
@@ -94,19 +95,21 @@ contract LottoPool is Ownable, LottoAsset {
         emit PoolActive(_poolId, pool.totalLotto, pool.prize);
     }
 
-    function buyLotto(uint _lottoId, uint _value) public payable {
-        require(_value == lottos[_lottoId].price, "must buy at lotto price");
-        ERC20 token = ERC20(_tokenAddress);
-        require(_value <= token.balanceOf(msg.sender), "not enough token");
+    function buyLotto(uint _lottoId, uint _value) public {
+        require(_value <= tokenContract.balanceOf(msg.sender), "not enough token");
         Lotto memory lotto = lottos[_lottoId];
+        require(_value == lotto.price, "must buy at lotto price");
         uint _poolId = lotto.poolId;
         Pool storage pool = pools[_poolId];
-        require(pool.isActive == true);
+        require(pool.isActive == true, "pool must active");
         // transfer
-        token.transferFrom(msg.sender, address(this), _lotto.price);
+        tokenContract.transferFrom(msg.sender, address(this), _value);
         _transferLotto(msg.sender, _lottoId);
-        string memory number = lotto.number;
-        pool.balance.add(msg.value);
-        pool.numberCount[number].add(1);
+        pool.numberToLottos[lotto.number].push(_lottoId);
+        pool.balance.add(_value);
+    }
+
+    function luckyDraw(string _number) public {
+        
     }
 }
