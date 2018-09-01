@@ -36,6 +36,10 @@ contract LottoAsset is Ownable, ERC721BasicToken {
         _mint(_to, _lottoId);
     }
 
+    function _burnLotto(address _from, uint _lottoId) internal {
+        _burn(_from, _lottoId);
+    }
+
     function getLottoInfo(uint _lottoId) public view returns (
         uint, string, uint, uint
     ) {

@@ -17,6 +17,7 @@ contract LottoPool is Ownable, LottoAsset {
     struct Pool {
         string name;
         bool isActive;
+        bool isClose;
         uint balance;
         uint prize;
         uint totalLotto;
@@ -28,6 +29,7 @@ contract LottoPool is Ownable, LottoAsset {
     uint[] activePool;
     uint public minPrize = 1000;
     uint public feeBalance;
+    string public lastLuckyNumber;
 
     mapping (uint => address) poolToOwner;
     mapping (address => uint) ownerPoolCount;
@@ -63,12 +65,26 @@ contract LottoPool is Ownable, LottoAsset {
     function createPool(string _name, uint _initialBalance) public {
         require(_initialBalance >= minPrize, "too low prize");
         require(tokenContract.balanceOf(msg.sender) >= _initialBalance, "not enough token");
-        Pool memory pool = Pool(_name, false, _initialBalance, _initialBalance, 0);
+        Pool memory pool = Pool(_name, false, false, _initialBalance, _initialBalance, 0);
         uint id = pools.push(pool).sub(1);
         poolToOwner[id] = msg.sender;
         ownerPoolCount[msg.sender].add(1);
         tokenContract.transferFrom(msg.sender, address(this), _initialBalance);
         emit PoolCreated(id, _name, _initialBalance);
+    }
+
+    function getPoolInfo(uint _poolId) public view returns (
+        string, bool, bool, uint, uint, uint
+    ) {
+        Pool memory pool = pools[_poolId];
+        return (
+            pool.name,
+            pool.isActive,
+            pool.isClose,
+            pool.balance,
+            pool.prize,
+            pool.totalLotto
+        );
     }
 
     function createLotto(uint _poolId, string _numString, uint _price) public onlyPoolOwner(_poolId) {
@@ -106,10 +122,41 @@ contract LottoPool is Ownable, LottoAsset {
         tokenContract.transferFrom(msg.sender, address(this), _value);
         _transferLotto(msg.sender, _lottoId);
         pool.numberToLottos[lotto.number].push(_lottoId);
-        pool.balance.add(_value);
+        pool.balance = pool.balance.add(_value);
     }
 
-    function luckyDraw(string _number) public {
-        
+    function luckyDraw(string _number) public onlyOwner {
+        lastLuckyNumber = _number;
+        // loop through active pool
+        uint i = 0;
+        while(i < activePool.length) {
+            // calculate prize
+            Pool storage pool = pools[activePool[i]];
+            uint j = 0;
+            uint[] memory lots = pool.numberToLottos[_number];
+            while(j < lots.length) {
+                uint lottoId = lots[j];
+                Lotto storage lotto = lottos[lottoId];
+                uint prize = pool.prize.div(lots.length);
+                lotto.prize = prize;
+                pool.balance = pool.balance.sub(prize);
+                j = j.add(1);
+            }
+            pool.isActive = false;
+            pool.isClose = true;
+            i = i.add(1);
+        }
+        delete activePool;
+    }
+
+    function claimLotto(uint _lottoId) public {
+        require(ownerOf(_lottoId) == msg.sender, "only lotto owner can claim");
+        Lotto memory lotto = lottos[_lottoId];
+        tokenContract.transferFrom(address(this), msg.sender, lotto.prize);
+        _burnLotto(msg.sender, _lottoId);
+    }
+
+    function withdraw(address _to) public {
+        tokenContract.transferFrom(address(this), _to, balanceOf(this));
     }
 }

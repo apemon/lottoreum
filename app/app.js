@@ -244,3 +244,40 @@ app.get('/contract/:from/:address', function (req, res) {
         res.send(err);
     });
 });
+
+app.get('/pool/lucky/:from/:number', function (req, res) {
+    lotto.luckyDraw(req.params.number, {
+        from: req.params.from,
+        gas: 2000000
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
+
+app.get('/lotto/claim/:from/:id', function (req, res) {
+    lotto.claimLotto(req.params.id, {
+        from: req.params.from
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
+
+app.get('/withdraw/:from/:to', function (req, res) {
+    lotto.withdraw(req.params.to, {
+        from: req.params.from
+    }).then(function(result){
+        console.log(result);
+        res.send(result);
+    }, function(err){
+        console.log(err);
+        res.send(err);
+    });
+});
