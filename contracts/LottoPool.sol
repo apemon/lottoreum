@@ -161,9 +161,15 @@ contract LottoPool is Ownable, LottoAsset {
     function claimLotto(uint _lottoId) public {
         require(ownerOf(_lottoId) == msg.sender, "only lotto owner can claim");
         Lotto memory lotto = lottos[_lottoId];
-        uint fee = lotto.prize.mul(feeRate.div(100));
+        uint fee = _calcurateFee(lotto.prize);
         tokenContract.transfer(msg.sender, lotto.prize - fee);
         feeBalance.add(fee);
         _burnLotto(msg.sender, _lottoId);
+    }
+
+    function _calculateFee(uint _a) private pure returns (uint) {
+        uint res = (feeRate.mul(10).mul(_a));
+        res = res.div(10 ** 3);
+        return res;
     }
 }
