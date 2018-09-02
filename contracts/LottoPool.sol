@@ -28,6 +28,7 @@ contract LottoPool is Ownable, LottoAsset {
     
     uint[] activePool;
     uint public minPrize = 1000;
+    uint public feeRate = 10;
     uint public feeBalance;
     string public lastLuckyNumber;
 
@@ -52,6 +53,14 @@ contract LottoPool is Ownable, LottoAsset {
 
     function setMinPrize(uint _prize) public onlyOwner {
         minPrize = _prize;
+    }
+
+    function setFeeRate(uint _rate) public onlyOwner {
+        feeRate = _rate;
+    }
+
+    function withdraw() public onlyOwner {
+        tokenContract.transfer(msg.sender, feeBalance);
     }
 
     function totalPoolOwn(address _owner) public view returns (uint) {
@@ -152,11 +161,9 @@ contract LottoPool is Ownable, LottoAsset {
     function claimLotto(uint _lottoId) public {
         require(ownerOf(_lottoId) == msg.sender, "only lotto owner can claim");
         Lotto memory lotto = lottos[_lottoId];
-        tokenContract.transferFrom(address(this), msg.sender, lotto.prize);
+        uint fee = lotto.prize.mul(feeRate.div(100));
+        tokenContract.transfer(msg.sender, lotto.prize - fee);
+        feeBalance.add(fee);
         _burnLotto(msg.sender, _lottoId);
-    }
-
-    function withdraw(address _to) public {
-        tokenContract.transferFrom(address(this), _to, balanceOf(this));
     }
 }
